@@ -90,6 +90,7 @@ export const store = {
         const newList = {
             id: crypto.randomUUID(),
             name: name,
+            createdAt: new Date().toISOString(),
             items: []
         };
         this.lists.push(newList);

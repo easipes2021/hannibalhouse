@@ -38,3 +38,14 @@ export const formatCurrency = (amount) => {
         currency: 'USD',
     }).format(amount);
 };
+
+export const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};

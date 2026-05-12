@@ -269,6 +269,63 @@
         </div>
     </div>
 
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New User</h2>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="user-form">
+                <div class="form-group">
+                    <label for="new-user-name">User Name</label>
+                    <input type="text" id="new-user-name" required placeholder="e.g., Jane Smith">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn close-modal">Cancel</button>
+                    <button type="submit" class="primary-btn">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="list-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New List</h2>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="list-form">
+                <div class="form-group">
+                    <label for="list-name">List Name</label>
+                    <input type="text" id="list-name" required placeholder="e.g., Grocery List">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn close-modal">Cancel</button>
+                    <button type="submit" class="primary-btn">Create List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="list-item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Item to List</h2>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="list-item-form">
+                <div class="form-group">
+                    <label for="item-name">Item Name</label>
+                    <input type="text" id="item-name" required placeholder="e.g., Milk">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn close-modal">Cancel</button>
+                    <button type="submit" class="primary-btn">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="js/store.js" type="module"></script>
     <script src="js/utils.js" type="module"></script>
     <script src="js/components.js" type="module"></script>

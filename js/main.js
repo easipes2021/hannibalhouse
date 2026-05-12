@@ -1,9 +1,6 @@
-/**
- * main.js - Application entry point
- */
 import { store } from './store.js';
 import { renderTask, updateStats } from './components.js';
-import { sortTasks, filterTasks } from './utils.js';
+import { sortTasks, filterTasks, formatDate } from './utils.js';
 
 // DOM Elements
 const taskList = document.getElementById('priority-task-list');
@@ -123,7 +120,12 @@ const renderListsView = () => {
 
     const activeList = store.lists.find(l => l.id === activeListId);
     if (activeList) {
-        activeListName.textContent = activeList.name;
+        activeListName.innerHTML = `
+            ${activeList.name}
+            <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px;">
+                Created: ${formatDate(activeList.createdAt)}
+            </span>
+        `;
         addListItemBtn.classList.remove('hidden');
         deleteListBtn.classList.remove('hidden');
         listItemsContainer.innerHTML = '';
@@ -154,18 +156,28 @@ const renderListsView = () => {
 
 const setupEventListeners = () => {
     // User Selection
+    const userModal = document.getElementById('user-modal');
+    const userForm = document.getElementById('user-form');
+
     userSelector.addEventListener('change', (e) => {
         store.setActiveUser(e.target.value);
     });
 
     addUserBtn.addEventListener('click', () => {
-        const name = prompt('Enter name for new user:');
+        userModal.classList.add('active');
+        userForm.reset();
+    });
+
+    userForm.onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('new-user-name').value;
         if (name) {
             const newUser = store.addUser(name);
             renderUsers();
             store.setActiveUser(newUser.id);
+            userModal.classList.remove('active');
         }
-    });
+    };
 
     // Theme Toggle
     themeToggle.addEventListener('click', () => {
@@ -252,20 +264,40 @@ const setupEventListeners = () => {
     });
 
     // Shopping List Events
+    const listModal = document.getElementById('list-modal');
+    const listItemModal = document.getElementById('list-item-modal');
+    const listForm = document.getElementById('list-form');
+    const listItemForm = document.getElementById('list-item-form');
+
     addListBtn.onclick = () => {
-        const name = prompt('Enter list name (e.g. Grocery List):');
+        listModal.classList.add('active');
+        listForm.reset();
+    };
+
+    listForm.onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('list-name').value;
         if (name) {
             const newList = store.addList(name);
             activeListId = newList.id;
             activeView = 'lists';
+            listModal.classList.remove('active');
             render();
+            renderUsers();
         }
     };
 
     addListItemBtn.onclick = () => {
-        const name = prompt('Enter item name:');
+        listItemModal.classList.add('active');
+        listItemForm.reset();
+    };
+
+    listItemForm.onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('item-name').value;
         if (name && activeListId) {
             store.addListItem(activeListId, name);
+            listItemModal.classList.remove('active');
             render();
         }
     };
@@ -277,6 +309,17 @@ const setupEventListeners = () => {
             render();
         }
     };
+
+    // Close Modals
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            taskModal.classList.remove('active');
+            mappingModal.classList.remove('active');
+            listModal.classList.remove('active');
+            listItemModal.classList.remove('active');
+            userModal.classList.remove('active');
+        });
+    });
 
     // Mapping Form submission
     mappingForm.onsubmit = (e) => {
