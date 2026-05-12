@@ -1,0 +1,7 @@
+Title,Room,Category,Priority,Price,Difficulty,Time,Repeat
+Clean Gutters,Exterior,maintenance,high,0,3,2,true
+Replace HVAC Filter,Basement,maintenance,medium,25,1,0.5,true
+Paint Guest Room,Guest Room,renovation,low,150,4,12,false
+Fix Kitchen Leak,Kitchen,maintenance,urgent,0,2,1,false
+Weekly Vacuum,Whole House,cleaning,medium,0,1,1,true
+Install Smart Thermostat,Hallway,renovation,medium,150,3,2,false

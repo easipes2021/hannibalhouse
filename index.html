@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hannibal House Dashboard | Home Management</title>
+    <meta name="description" content="A premium dashboard for managing home maintenance, renovations, and cleaning tasks.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i data-lucide="home"></i>
+                <span>Hannibal House</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="tasks">
+                    <i data-lucide="check-square"></i>
+                    <span>All Tasks</span>
+                </button>
+                <button class="nav-item" data-view="maintenance">
+                    <i data-lucide="wrench"></i>
+                    <span>Maintenance</span>
+                </button>
+                <button class="nav-item" data-view="renovations">
+                    <i data-lucide="hammer"></i>
+                    <span>Renovations</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="import-btn" class="secondary-btn">
+                    <i data-lucide="upload"></i>
+                    <span>Import CSV</span>
+                </button>
+                <input type="file" id="csv-input" accept=".csv" style="display: none;">
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-container">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="task-search" placeholder="Search tasks, rooms, or items...">
+                </div>
+                
+                <div class="top-bar-actions">
+                    <button id="add-task-btn" class="primary-btn">
+                        <i data-lucide="plus"></i>
+                        <span>New Task</span>
+                    </button>
+                </div>
+            </header>
+
+            <section class="content-view" id="dashboard-view">
+                <div class="view-header">
+                    <h1>House Overview</h1>
+                    <p class="subtitle">Welcome back! Here is what needs your attention.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon pending"><i data-lucide="clock"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Pending Tasks</span>
+                            <span class="stat-value" id="pending-count">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon urgent"><i data-lucide="alert-triangle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">High Priority</span>
+                            <span class="stat-value" id="urgent-count">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon budget"><i data-lucide="dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Est. Budget</span>
+                            <span class="stat-value" id="total-budget">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-sections">
+                    <div class="section-container">
+                        <div class="section-header">
+                            <h2>Prioritized Tasks</h2>
+                            <div class="filter-group">
+                                <select id="sort-select">
+                                    <option value="priority">Sort by Priority</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="difficulty">Difficulty</option>
+                                    <option value="time">Time Required</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="task-list" id="priority-task-list">
+                            <!-- Tasks will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Task</h2>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Task Title</label>
+                    <input type="text" id="task-title" required placeholder="e.g., Clean gutters">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-room">Room / Location</label>
+                        <input type="text" id="task-room" placeholder="e.g., Exterior">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-category">Category</label>
+                        <select id="task-category">
+                            <option value="cleaning">Cleaning</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="renovation">Renovation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-difficulty">Difficulty (1-5)</label>
+                        <input type="number" id="task-difficulty" min="1" max="5" value="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-price">Estimated Price ($)</label>
+                        <input type="number" id="task-price" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-time">Est. Time (hours)</label>
+                        <input type="number" id="task-time" min="0" step="0.5" value="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="task-repeat"> Repeat this task
+                    </label>
+                    <div id="repeat-options" class="hidden">
+                        <select id="repeat-interval">
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-btn close-modal">Cancel</button>
+                    <button type="submit" class="primary-btn">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/store.js" type="module"></script>
+    <script src="js/utils.js" type="module"></script>
+    <script src="js/components.js" type="module"></script>
+    <script src="js/main.js" type="module"></script>
+    <script>
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
