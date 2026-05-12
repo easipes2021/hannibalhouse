@@ -204,10 +204,12 @@ const renderListsView = () => {
 
     if (activeList) {
         activeListName.innerHTML = `
-            ${activeList.name}
-            <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px;">
-                Created ${formatDate(activeList.created_at)}
-            </span>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 1.2rem; font-weight: 700;">${activeList.name}</span>
+                <div style="display: flex; gap: 8px; font-size: 0.7rem; font-weight: 400; color: var(--text-muted); margin-top: 4px;">
+                    <span>Created ${formatDate(activeList.created_at)}</span>
+                </div>
+            </div>
         `;
         addListItemBtn.classList.remove('hidden');
         editListBtn.classList.remove('hidden');
