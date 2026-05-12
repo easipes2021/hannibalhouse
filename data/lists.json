@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "4c59e751-bbe5-4f2c-b664-22bca3a1f904",
+    "name": "Grocery List",
+    "items": [
+      {
+        "id": "c92a5ee2-f1cb-4d3d-966e-070d8229a3a0",
+        "name": "Pancake Mix",
+        "completed": true,
+        "userId": "80abdb9b-f1d9-4a52-b624-5b71973f96aa"
+      },
+      {
+        "id": "028e7e8d-289d-4bed-bd19-9594a5601d62",
+        "name": "Pancake batter",
+        "completed": true,
+        "userId": "88efcfcd-02ec-4ede-9da0-2e726f700f34"
+      },
+      {
+        "id": "9129f78c-e726-4eec-81de-7f50f71a289b",
+        "name": "Millk",
+        "completed": false,
+        "userId": "b98a7704-a693-4a71-a805-524de66be80b"
+      }
+    ]
+  }
+]
