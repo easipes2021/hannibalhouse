@@ -158,6 +158,7 @@ const render = () => {
     }
     if (activeView === 'settings') {
         renderSettingsView();
+        renderUsers(); // Ensure users list is updated in settings
     }
     
     // Update stats

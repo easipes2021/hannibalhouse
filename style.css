@@ -65,11 +65,13 @@ body {
     height: 100vh;
 }
 
+/* Layout */
 .app-container {
     display: flex;
     height: 100vh;
     width: 100vw;
     transition: var(--transition);
+    overflow: hidden;
 }
 
 .app-container.sidebar-collapsed .sidebar {
@@ -802,40 +804,69 @@ select {
     background: var(--bg-sidebar);
 }
 
-/* Mobile Enhancements */
+/* Mobile Enhancements for iPhone 16 Plus & Modern Phones */
 @media (max-width: 768px) {
     :root {
-        --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+        --safe-area-top: env(safe-area-inset-top, 20px);
+        --safe-area-bottom: env(safe-area-inset-bottom, 34px);
+        --safe-area-left: env(safe-area-inset-left, 0px);
+        --safe-area-right: env(safe-area-inset-right, 0px);
     }
 
     .app-container {
-        padding-bottom: calc(70px + var(--safe-area-bottom));
+        padding-bottom: calc(85px + var(--safe-area-bottom));
+        padding-left: var(--safe-area-left);
+        padding-right: var(--safe-area-right);
     }
 
     .bottom-nav {
         padding-bottom: var(--safe-area-bottom);
-        height: calc(70px + var(--safe-area-bottom));
+        height: calc(85px + var(--safe-area-bottom));
+        background: rgba(10, 10, 12, 0.95);
+        backdrop-filter: blur(20px);
     }
 
     .main-content {
-        padding: 20px 16px;
-        margin-top: env(safe-area-inset-top, 0);
+        padding: 24px 20px;
+        /* Ensure top content isn't hidden by notch */
+        padding-top: calc(24px + var(--safe-area-top));
     }
 
     .top-bar {
-        padding: 12px 16px;
-        margin: -20px -16px 24px -16px;
-        width: calc(100% + 32px);
+        padding: 16px 20px;
+        margin: calc(-24px - var(--safe-area-top)) -20px 32px -20px;
+        width: calc(100% + 40px);
+        border-radius: 0 0 24px 24px;
     }
 
-    /* Better touch feedback */
-    button:active {
-        transform: scale(0.96);
-        opacity: 0.8;
+    .view-header {
+        margin-bottom: 32px;
     }
 
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Minimalist Shopping List Buttons */
+    .list-details .top-bar-actions {
+        gap: 4px;
+    }
+
+    .list-details .top-bar-actions .secondary-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+    }
+
+    /* Better touch targets */
     .nav-item {
-        padding: 12px;
+        padding: 16px 12px;
     }
 }
 
