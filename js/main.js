@@ -1,7 +1,6 @@
 import { store } from './store.js';
 import { renderTask, updateStats } from './components.js';
 import { sortTasks, filterTasks, formatDate } from './utils.js';
-import { githubSync } from './github.js';
 
 // DOM Elements
 const taskList = document.getElementById('priority-task-list');
@@ -21,7 +20,6 @@ const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.content-view');
 
 // Sidebar Elements
-const sidebar = document.getElementById('sidebar');
 const appContainer = document.getElementById('app-container');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 const expandSidebarBtn = document.getElementById('expand-sidebar');
@@ -85,13 +83,12 @@ const handleEditList = (id, currentName) => {
     nameInput.value = currentName;
     listModal.classList.add('active');
 
-    listForm.onsubmit = (e) => {
+    listForm.onsubmit = async (e) => {
         e.preventDefault();
         const newName = nameInput.value;
         if (newName) {
-            store.updateList(id, newName);
+            await store.updateList(id, newName);
             listModal.classList.remove('active');
-            render();
             // Reset form for next use
             modalTitle.textContent = 'Create New List';
             submitBtn.textContent = 'Create List';
@@ -111,13 +108,12 @@ const handleEditItem = (listId, itemId, currentName) => {
     nameInput.value = currentName;
     itemModal.classList.add('active');
 
-    itemForm.onsubmit = (e) => {
+    itemForm.onsubmit = async (e) => {
         e.preventDefault();
         const newName = nameInput.value;
         if (newName) {
-            store.updateListItem(listId, itemId, newName);
+            await store.updateListItem(listId, itemId, newName);
             itemModal.classList.remove('active');
-            render();
             // Reset form for next use
             modalTitle.textContent = 'Add Item to List';
             submitBtn.textContent = 'Add Item';
@@ -192,7 +188,7 @@ const renderListsView = () => {
         activeListName.innerHTML = `
             ${activeList.name}
             <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px;">
-                Created ${formatDate(activeList.createdAt)}
+                Created ${formatDate(activeList.created_at)}
             </span>
         `;
         addListItemBtn.classList.remove('hidden');
@@ -210,9 +206,9 @@ const renderListsView = () => {
                 <div style="flex: 1">
                     <span class="task-item-title">${item.name}</span>
                     <div style="display: flex; gap: 8px; align-items: center; font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">
-                        <span>By: ${store.users.find(u => u.id === item.userId)?.name || 'Unknown'}</span>
+                        <span>By: ${store.users.find(u => u.id === item.user_id)?.name || 'Unknown'}</span>
                         <span>•</span>
-                        <span>${formatDate(item.createdAt)}</span>
+                        <span>${formatDate(item.created_at)}</span>
                     </div>
                 </div>
                 <div class="task-actions">
@@ -226,10 +222,7 @@ const renderListsView = () => {
             };
             itemEl.querySelector('.delete-btn').onclick = (e) => {
                 e.stopPropagation();
-                if (confirm('Delete this item?')) {
-                    store.deleteListItem(activeList.id, item.id);
-                    render();
-                }
+                if (confirm('Delete this item?')) store.deleteListItem(activeList.id, item.id);
             };
             itemEl.querySelector('.edit-item-btn').onclick = (e) => {
                 e.stopPropagation();
@@ -275,14 +268,15 @@ const setupEventListeners = () => {
         userForm.reset();
     });
 
-    userForm.onsubmit = (e) => {
+    userForm.onsubmit = async (e) => {
         e.preventDefault();
         const name = document.getElementById('new-user-name').value;
         if (name) {
-            const newUser = store.addUser(name);
-            renderUsers();
-            store.setActiveUser(newUser.id);
-            userModal.classList.remove('active');
+            const newUser = await store.addUser(name);
+            if (newUser) {
+                store.setActiveUser(newUser.id);
+                userModal.classList.remove('active');
+            }
         }
     };
 
@@ -306,7 +300,7 @@ const setupEventListeners = () => {
     });
     
     // Form submission
-    taskForm.addEventListener('submit', (e) => {
+    taskForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(taskForm);
         const taskData = {
@@ -317,11 +311,10 @@ const setupEventListeners = () => {
             difficulty: parseInt(formData.get('task-difficulty')),
             price: parseFloat(formData.get('task-price')),
             time: parseFloat(formData.get('task-time')),
-            repeat: document.getElementById('task-repeat').checked,
-            repeatInterval: formData.get('repeat-interval')
+            repeat: document.getElementById('task-repeat').checked
         };
         
-        store.addTask(taskData);
+        await store.addTask(taskData);
         taskModal.classList.remove('active');
     });
 
@@ -377,16 +370,16 @@ const setupEventListeners = () => {
         listForm.onsubmit = handleAddListSubmit;
     };
 
-    const handleAddListSubmit = (e) => {
+    const handleAddListSubmit = async (e) => {
         e.preventDefault();
         const name = document.getElementById('list-name').value;
         if (name) {
-            const newList = store.addList(name);
-            activeListId = newList.id;
-            activeView = 'lists';
-            listModal.classList.remove('active');
-            render();
-            renderUsers();
+            const newList = await store.addList(name);
+            if (newList) {
+                activeListId = newList.id;
+                activeView = 'lists';
+                listModal.classList.remove('active');
+            }
         }
     };
 
@@ -405,74 +398,22 @@ const setupEventListeners = () => {
         listItemForm.onsubmit = handleAddItemSubmit;
     };
 
-    const handleAddItemSubmit = (e) => {
+    const handleAddItemSubmit = async (e) => {
         e.preventDefault();
         const name = document.getElementById('item-name').value;
         if (name && activeListId) {
-            store.addListItem(activeListId, name);
+            await store.addListItem(activeListId, name);
             listItemModal.classList.remove('active');
-            render();
         }
     };
 
     listItemForm.onsubmit = handleAddItemSubmit;
 
-    deleteListBtn.onclick = () => {
+    deleteListBtn.onclick = async () => {
         if (confirm('Delete this list?')) {
-            store.deleteList(activeListId);
+            await store.deleteList(activeListId);
             activeListId = null;
             render();
-        }
-    };
-
-    // GitHub Sync Events
-    const syncRepoBtn = document.getElementById('sync-repo-btn');
-    const syncModal = document.getElementById('sync-modal');
-    const syncForm = document.getElementById('sync-form');
-    const syncSubmitBtn = document.getElementById('sync-submit-btn');
-
-    // Load saved GitHub settings
-    const savedRepo = localStorage.getItem('gh_repo');
-    const savedBranch = localStorage.getItem('gh_branch');
-    const savedToken = localStorage.getItem('gh_token');
-    if (savedRepo) document.getElementById('gh-repo').value = savedRepo;
-    if (savedBranch) document.getElementById('gh-branch').value = savedBranch;
-    if (savedToken) document.getElementById('gh-token').value = savedToken;
-
-    syncRepoBtn.onclick = () => {
-        syncModal.classList.add('active');
-    };
-
-    syncForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const token = document.getElementById('gh-token').value;
-        const repo = document.getElementById('gh-repo').value;
-        const branch = document.getElementById('gh-branch').value;
-
-        // Save settings
-        localStorage.setItem('gh_repo', repo);
-        localStorage.setItem('gh_branch', branch);
-        localStorage.setItem('gh_token', token);
-
-        syncSubmitBtn.disabled = true;
-        syncSubmitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Syncing...';
-        if (window.lucide) lucide.createIcons();
-
-        try {
-            await githubSync.syncAll(token, repo, branch, {
-                tasks: store.tasks,
-                lists: store.lists,
-                users: store.users
-            });
-            alert('Successfully synced data to GitHub repository!');
-            syncModal.classList.remove('active');
-        } catch (err) {
-            console.error(err);
-            alert(`Sync failed: ${err.message}`);
-        } finally {
-            syncSubmitBtn.disabled = false;
-            syncSubmitBtn.textContent = 'Push Data to Repo';
-            if (window.lucide) lucide.createIcons();
         }
     };
 
@@ -484,12 +425,11 @@ const setupEventListeners = () => {
             listModal.classList.remove('active');
             listItemModal.classList.remove('active');
             userModal.classList.remove('active');
-            syncModal.classList.remove('active');
         });
     });
 
     // Mapping Form submission
-    mappingForm.onsubmit = (e) => {
+    mappingForm.onsubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(mappingForm);
         const mapping = {};
@@ -503,16 +443,18 @@ const setupEventListeners = () => {
             return task;
         });
 
-        store.bulkAdd(mappedTasks);
+        await store.bulkAdd(mappedTasks);
         mappingModal.classList.remove('active');
         alert(`Successfully imported ${mappedTasks.length} tasks!`);
-        render();
     };
 
     // Listen for data updates
     window.addEventListener('tasksUpdated', render);
     window.addEventListener('listsUpdated', render);
-    window.addEventListener('userChanged', render);
+    window.addEventListener('userChanged', () => {
+        renderUsers();
+        render();
+    });
 };
 
 const handleCsvImport = (results) => {

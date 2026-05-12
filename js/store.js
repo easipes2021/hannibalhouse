@@ -1,11 +1,14 @@
 /**
- * store.js - State management and persistence
+ * store.js - State management using Supabase for cloud persistence
  */
 
-export const STORAGE_KEY = 'hannibal_house_tasks';
-export const LISTS_KEY = 'hannibal_house_lists';
+const SUPABASE_URL = 'https://dewyghwhnkjtbxncraju.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRld3lnaHdobmtqdGJ4bmNyYWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1OTA5MTEsImV4cCI6MjA5NDE2NjkxMX0.0wdZocow_DS0O0sTpjXDY2lQQVcuXSAlEBu3cNSzLRo';
+
+// @ts-ignore - Supabase is loaded from CDN in index.html
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 export const THEME_KEY = 'hannibal_house_theme';
-export const USERS_KEY = 'hannibal_house_users';
 export const ACTIVE_USER_KEY = 'hannibal_house_active_user';
 
 export const store = {
@@ -16,69 +19,64 @@ export const store = {
     theme: 'dark',
 
     async init() {
-        // 1. Fetch data from Repo (Publicly available if on GitHub Pages)
-        try {
-            const [tasksRes, listsRes, usersRes] = await Promise.all([
-                fetch('data/tasks.json').then(r => r.json()),
-                fetch('data/lists.json').then(r => r.json()),
-                fetch('data/users.json').then(r => r.json())
-            ]);
-            
-            this.tasks = tasksRes || [];
-            this.lists = listsRes || [];
-            this.users = usersRes || [];
-        } catch (e) {
-            console.warn('Could not load repo data, falling back to localStorage', e);
-        }
+        // 1. Fetch initial data from Supabase
+        await this.fetchAll();
 
-        // 2. Merge/Overwrite with LocalStorage (for local unsynced changes)
-        const savedTasks = localStorage.getItem(STORAGE_KEY);
-        if (savedTasks) {
-            const localTasks = JSON.parse(savedTasks);
-            // Simple merge: add local tasks that aren't in repo
-            localTasks.forEach(lt => {
-                if (!this.tasks.find(rt => rt.id === lt.id)) this.tasks.push(lt);
-            });
-        }
+        // 2. Set up Real-time Subscriptions
+        this.setupSubscriptions();
 
-        const savedLists = localStorage.getItem(LISTS_KEY);
-        if (savedLists) {
-            const localLists = JSON.parse(savedLists);
-            localLists.forEach(ll => {
-                if (!this.lists.find(rl => rl.id === ll.id)) this.lists.push(ll);
-            });
-        }
-
-        const savedUsers = localStorage.getItem(USERS_KEY);
-        if (savedUsers) {
-            const localUsers = JSON.parse(savedUsers);
-            localUsers.forEach(lu => {
-                if (!this.users.find(ru => ru.id === lu.id)) this.users.push(lu);
-            });
-        }
-
-        if (this.users.length === 0) {
-            this.addUser('Owner');
-        }
-
-        // Load Active User
-        const savedActiveUser = localStorage.getItem(ACTIVE_USER_KEY);
-        this.activeUserId = savedActiveUser || this.users[0]?.id;
-
-        // Load Theme
+        // 3. Load UI preferences
         const savedTheme = localStorage.getItem(THEME_KEY);
         this.theme = savedTheme || 'dark';
         document.documentElement.setAttribute('data-theme', this.theme);
 
+        const savedActiveUser = localStorage.getItem(ACTIVE_USER_KEY);
+        this.activeUserId = savedActiveUser || (this.users.length > 0 ? this.users[0].id : null);
+
         return { tasks: this.tasks, lists: this.lists, users: this.users, activeUserId: this.activeUserId };
     },
 
-    addUser(name) {
-        const newUser = { id: crypto.randomUUID(), name: name };
-        this.users.push(newUser);
-        this.saveUsers();
-        if (!this.activeUserId) this.setActiveUser(newUser.id);
-        return newUser;
+    async fetchAll() {
+        const [tasksRes, listsRes, usersRes] = await Promise.all([
+            supabase.from('tasks').select('*').order('created_at', { ascending: false }),
+            supabase.from('lists').select('*, list_items(*)').order('created_at', { ascending: false }),
+            supabase.from('users').select('*').order('name')
+        ]);
+
+        this.tasks = tasksRes.data || [];
+        // Map lists to match old format where items are nested
+        this.lists = (listsRes.data || []).map(l => ({
+            ...l,
+            items: l.list_items || []
+        }));
+        this.users = usersRes.data || [];
+    },
+
+    setupSubscriptions() {
+        supabase.channel('public:tasks')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => this.refreshAndNotify('tasksUpdated'))
+            .subscribe();
+
+        supabase.channel('public:lists')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => this.refreshAndNotify('listsUpdated'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'list_items' }, () => this.refreshAndNotify('listsUpdated'))
+            .subscribe();
+            
+        supabase.channel('public:users')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => this.refreshAndNotify('userChanged'))
+            .subscribe();
+    },
+
+    async refreshAndNotify(eventName) {
+        await this.fetchAll();
+        window.dispatchEvent(new CustomEvent(eventName));
+    },
+
+    // User Methods
+    async addUser(name) {
+        const { data, error } = await supabase.from('users').insert([{ name }]).select();
+        if (error) console.error(error);
+        return data ? data[0] : null;
     },
 
     setActiveUser(id) {
@@ -87,130 +85,83 @@ export const store = {
         window.dispatchEvent(new CustomEvent('userChanged'));
     },
 
-    saveUsers() {
-        localStorage.setItem(USERS_KEY, JSON.stringify(this.users));
+    // List Methods
+    async addList(name) {
+        const { data, error } = await supabase.from('lists').insert([{ name }]).select();
+        if (error) console.error(error);
+        return data ? data[0] : null;
     },
 
-    toggleTheme() {
-        this.theme = this.theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem(THEME_KEY, this.theme);
-        document.documentElement.setAttribute('data-theme', this.theme);
-        return this.theme;
+    async updateList(id, name) {
+        await supabase.from('lists').update({ name }).eq('id', id);
     },
 
-    saveTasks() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.tasks));
-        window.dispatchEvent(new CustomEvent('tasksUpdated'));
+    async deleteList(id) {
+        await supabase.from('lists').delete().eq('id', id);
     },
 
-    saveLists() {
-        localStorage.setItem(LISTS_KEY, JSON.stringify(this.lists));
-        window.dispatchEvent(new CustomEvent('listsUpdated'));
+    async addListItem(listId, itemName) {
+        await supabase.from('list_items').insert([{
+            list_id: listId,
+            name: itemName,
+            user_id: this.activeUserId
+        }]);
     },
 
-    // Lists Methods
-    addList(name) {
-        const newList = {
-            id: crypto.randomUUID(),
-            name: name,
-            createdAt: new Date().toISOString(),
-            items: []
-        };
-        this.lists.push(newList);
-        this.saveLists();
-        return newList;
+    async updateListItem(listId, itemId, name) {
+        await supabase.from('list_items').update({ name }).eq('id', itemId);
     },
 
-    deleteList(id) {
-        this.lists = this.lists.filter(l => l.id !== id);
-        this.saveLists();
-    },
-
-    addListItem(listId, itemName) {
+    async toggleListItem(listId, itemId) {
         const list = this.lists.find(l => l.id === listId);
-        if (list) {
-            list.items.push({
-                id: crypto.randomUUID(),
-                name: itemName,
-                completed: false,
-                userId: this.activeUserId,
-                createdAt: new Date().toISOString()
-            });
-            this.saveLists();
+        const item = list?.items.find(i => i.id === itemId);
+        if (item) {
+            await supabase.from('list_items').update({ completed: !item.completed }).eq('id', itemId);
         }
     },
 
-    updateList(id, name) {
-        const list = this.lists.find(l => l.id === id);
-        if (list) {
-            list.name = name;
-            this.saveLists();
-        }
+    async deleteListItem(listId, itemId) {
+        await supabase.from('list_items').delete().eq('id', itemId);
     },
 
-    updateListItem(listId, itemId, name) {
-        const list = this.lists.find(l => l.id === listId);
-        if (list) {
-            const item = list.items.find(i => i.id === itemId);
-            if (item) {
-                item.name = name;
-                this.saveLists();
-            }
-        }
+    // Task Methods
+    async addTask(task) {
+        const { data, error } = await supabase.from('tasks').insert([{
+            ...task,
+            user_id: this.activeUserId
+        }]).select();
+        if (error) console.error(error);
+        return data ? data[0] : null;
     },
 
-    toggleListItem(listId, itemId) {
-        const list = this.lists.find(l => l.id === listId);
-        if (list) {
-            const item = list.items.find(i => i.id === itemId);
-            if (item) {
-                item.completed = !item.completed;
-                this.saveLists();
-            }
-        }
+    async updateTask(id, updates) {
+        await supabase.from('tasks').update(updates).eq('id', id);
     },
 
-    deleteListItem(listId, itemId) {
-        const list = this.lists.find(l => l.id === listId);
-        if (list) {
-            list.items = list.items.filter(i => i.id !== itemId);
-            this.saveLists();
-        }
+    async deleteTask(id) {
+        await supabase.from('tasks').delete().eq('id', id);
     },
 
-    // Tasks Methods
-    addTask(task) {
-        const newTask = {
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            completed: false,
-            userId: this.activeUserId,
-            ...task
-        };
-        this.tasks.push(newTask);
-        this.saveTasks();
-        return newTask;
-    },
-
-    updateTask(id, updates) {
-        const index = this.tasks.findIndex(t => t.id === id);
-        if (index !== -1) {
-            this.tasks[index] = { ...this.tasks[index], ...updates };
-            this.saveTasks();
-        }
-    },
-
-    deleteTask(id) {
-        this.tasks = this.tasks.filter(t => t.id !== id);
-        this.saveTasks();
-    },
-
-    toggleTask(id) {
+    async toggleTask(id) {
         const task = this.tasks.find(t => t.id === id);
         if (task) {
-            task.completed = !task.completed;
-            this.saveTasks();
+            await supabase.from('tasks').update({ completed: !task.completed }).eq('id', id);
         }
+    },
+
+    async bulkAdd(newTasks) {
+        const formatted = newTasks.map(t => ({
+            title: t.title || 'Untitled Task',
+            room: t.room || 'General',
+            category: (t.category || 'other').toLowerCase(),
+            priority: (t.priority || 'medium').toLowerCase(),
+            price: parseFloat(t.price || 0),
+            difficulty: parseInt(t.difficulty || 1),
+            time: parseFloat(t.time || 1),
+            repeat: !!t.repeat,
+            user_id: this.activeUserId
+        }));
+        await supabase.from('tasks').insert(formatted);
     },
 
     getStats() {
@@ -225,23 +176,10 @@ export const store = {
         };
     },
 
-    bulkAdd(newTasks) {
-        const mappedTasks = newTasks.map(t => ({
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            completed: false,
-            userId: this.activeUserId,
-            title: t.title || 'Untitled Task',
-            room: t.room || 'General',
-            category: (t.category || 'other').toLowerCase(),
-            priority: (t.priority || 'medium').toLowerCase(),
-            price: parseFloat(t.price || 0),
-            difficulty: parseInt(t.difficulty || 1),
-            time: parseFloat(t.time || 1),
-            repeat: !!t.repeat
-        }));
-        
-        this.tasks = [...this.tasks, ...mappedTasks];
-        this.saveTasks();
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, this.theme);
+        document.documentElement.setAttribute('data-theme', this.theme);
+        return this.theme;
     }
 };

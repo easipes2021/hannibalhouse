@@ -17,7 +17,7 @@
     <!-- CSV Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="app-container" id="app-container">
@@ -64,13 +64,9 @@
                     <i data-lucide="sun"></i>
                     <span>Toggle Theme</span>
                 </button>
-                <button id="import-btn" class="secondary-btn" style="margin-bottom: 12px;">
+                <button id="import-btn" class="secondary-btn">
                     <i data-lucide="upload"></i>
                     <span>Import CSV</span>
-                </button>
-                <button id="sync-repo-btn" class="primary-btn">
-                    <i data-lucide="refresh-cw"></i>
-                    <span>Sync to GitHub</span>
                 </button>
                 <input type="file" id="csv-input" accept=".csv" style="display: none;">
             </div>
@@ -297,37 +293,6 @@
                 <div class="form-actions">
                     <button type="button" class="secondary-btn close-modal">Cancel</button>
                     <button type="submit" class="primary-btn">Add User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="sync-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Sync to GitHub Repository</h2>
-                <button class="close-modal"><i data-lucide="x"></i></button>
-            </div>
-            <p style="margin-bottom: 20px; color: var(--text-secondary);">This will save your current data (tasks, lists, users) directly into the repository files so they are available on all devices.</p>
-            <form id="sync-form">
-                <div class="form-group">
-                    <label for="gh-token">GitHub Personal Access Token</label>
-                    <input type="password" id="gh-token" required placeholder="ghp_xxxxxxxxxxxx">
-                    <p class="subtitle" style="font-size: 0.7rem; margin-top: 4px;">Needs 'repo' scope. Stored locally in your browser.</p>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="gh-repo">Repository (User/Repo)</label>
-                        <input type="text" id="gh-repo" required placeholder="easipes2021/hannibalhouse">
-                    </div>
-                    <div class="form-group">
-                        <label for="gh-branch">Branch</label>
-                        <input type="text" id="gh-branch" value="main">
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="secondary-btn close-modal">Cancel</button>
-                    <button type="submit" class="primary-btn" id="sync-submit-btn">Push Data to Repo</button>
                 </div>
             </form>
         </div>
