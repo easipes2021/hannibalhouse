@@ -3,12 +3,13 @@
 A premium, high-performance dashboard for managing home maintenance, renovations, and cleaning tasks. Built with Vanilla JS and CSS for maximum speed and compatibility.
 
 ## ✨ Features
-- **Task Management**: Create, track, and manage home work orders.
+- **Mobile Optimized**: Responsive design with a bottom navigation bar for a seamless mobile experience.
+- **User Tracking**: Create multiple user profiles and track who added every task or list item.
+- **Shopping & Project Lists**: Manage multiple shopping lists with timestamps and inline item addition.
+- **Advanced CSV Mapping**: Flexible import tool to map your spreadsheet columns to dashboard fields.
 - **Smart Prioritization**: Sort tasks by price, difficulty, time, or priority levels.
-- **CSV Import**: Upload your existing spreadsheets to quickly populate your dashboard.
-- **Persistence**: All data is saved locally to your browser.
-- **Premium Design**: Dark mode interface with glassmorphism and smooth animations.
-- **Repeated Tasks**: Set reminders for recurring maintenance.
+- **Theme Toggle**: Light and dark mode support with glassmorphism aesthetics.
+- **Persistence**: All data is saved locally to your browser and cached across sessions.
 
 ## 🚀 Getting Started
 1. Clone the repository to your local machine.
