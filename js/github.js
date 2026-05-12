@@ -4,13 +4,18 @@
 
 export const githubSync = {
     async pushToRepo(token, repo, branch, path, content, message) {
-        const url = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`;
+        const timestamp = new Date().getTime();
+        const url = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}&t=${timestamp}`;
         
         // 1. Get current file SHA (if it exists)
         let sha = null;
         try {
             const res = await fetch(url, {
-                headers: { 'Authorization': `token ${token}` }
+                headers: { 
+                    'Authorization': `token ${token}`,
+                    'If-None-Match': '' // Bypass some browser caches
+                },
+                cache: 'no-store'
             });
             if (res.ok) {
                 const data = await res.json();
@@ -46,9 +51,13 @@ export const githubSync = {
     },
 
     async syncAll(token, repo, branch, data) {
-        // Sync tasks, lists, and users sequentially
-        await this.pushToRepo(token, repo, branch, 'data/tasks.json', data.tasks, 'Sync tasks from Hannibal House Dashboard');
-        await this.pushToRepo(token, repo, branch, 'data/lists.json', data.lists, 'Sync lists from Hannibal House Dashboard');
-        await this.pushToRepo(token, repo, branch, 'data/users.json', data.users, 'Sync users from Hannibal House Dashboard');
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+        
+        // Sync tasks, lists, and users sequentially with small delays to prevent SHA conflicts
+        await this.pushToRepo(token, repo, branch, 'data/tasks.json', data.tasks, 'Sync tasks');
+        await delay(500);
+        await this.pushToRepo(token, repo, branch, 'data/lists.json', data.lists, 'Sync lists');
+        await delay(500);
+        await this.pushToRepo(token, repo, branch, 'data/users.json', data.users, 'Sync users');
     }
 };
