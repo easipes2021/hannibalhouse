@@ -30,6 +30,10 @@ const addListItemBtn = document.getElementById('add-list-item-btn');
 const deleteListBtn = document.getElementById('delete-list-btn');
 const activeListName = document.getElementById('active-list-name');
 
+// User Elements
+const userSelector = document.getElementById('user-selector');
+const addUserBtn = document.getElementById('add-user-btn');
+
 // App State
 let currentSort = 'priority';
 let searchQuery = '';
@@ -39,11 +43,24 @@ let pendingCsvData = null;
 
 const init = () => {
     store.init();
+    renderUsers();
     render();
     setupEventListeners();
 };
 
+const renderUsers = () => {
+    userSelector.innerHTML = '';
+    store.users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.name;
+        option.selected = user.id === store.activeUserId;
+        userSelector.appendChild(option);
+    });
+};
+
 const render = () => {
+    // ... rest of render logic ...
     // 1. Handle Navigation Highlighting
     navItems.forEach(item => {
         item.classList.toggle('active', item.dataset.view === activeView);
@@ -117,7 +134,10 @@ const renderListsView = () => {
                 <div class="task-checkbox">
                     ${item.completed ? '<i data-lucide="check" style="width: 14px; color: white"></i>' : ''}
                 </div>
-                <span class="task-item-title" style="flex: 1">${item.name}</span>
+                <div style="flex: 1">
+                    <span class="task-item-title">${item.name}</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Added by: ${store.users.find(u => u.id === item.userId)?.name || 'Unknown'}</span>
+                </div>
                 <button class="delete-btn"><i data-lucide="trash-2" style="width: 14px"></i></button>
             `;
             itemEl.querySelector('.task-checkbox').onclick = () => store.toggleListItem(activeList.id, item.id);
@@ -133,6 +153,20 @@ const renderListsView = () => {
 };
 
 const setupEventListeners = () => {
+    // User Selection
+    userSelector.addEventListener('change', (e) => {
+        store.setActiveUser(e.target.value);
+    });
+
+    addUserBtn.addEventListener('click', () => {
+        const name = prompt('Enter name for new user:');
+        if (name) {
+            const newUser = store.addUser(name);
+            renderUsers();
+            store.setActiveUser(newUser.id);
+        }
+    });
+
     // Theme Toggle
     themeToggle.addEventListener('click', () => {
         store.toggleTheme();

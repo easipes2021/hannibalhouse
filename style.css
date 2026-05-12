@@ -187,6 +187,43 @@ body {
     box-shadow: 0 0 0 2px var(--accent-primary-glow);
 }
 
+/* User Selector */
+.user-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-input);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-right: 12px;
+}
+
+.user-selector-container select {
+    background: none;
+    border: none;
+    padding: 4px 24px 4px 0;
+    width: auto;
+    min-width: 100px;
+    font-weight: 500;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--accent-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: var(--transition);
+}
+
+.icon-btn:hover {
+    transform: scale(1.1);
+}
+
 /* Buttons */
 .primary-btn {
     display: flex;

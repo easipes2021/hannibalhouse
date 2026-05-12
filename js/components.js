@@ -1,7 +1,5 @@
-/**
- * components.js - UI rendering logic
- */
 import { formatCurrency } from './utils.js';
+import { store } from './store.js';
 
 export const renderTask = (task, onToggle, onDelete) => {
     const div = document.createElement('div');
@@ -15,6 +13,7 @@ export const renderTask = (task, onToggle, onDelete) => {
         <div class="task-content">
             <span class="task-item-title">${task.title}</span>
             <div class="task-meta">
+                <span><i data-lucide="user" style="width: 12px"></i> ${store.users.find(u => u.id === task.userId)?.name || 'Unknown'}</span>
                 <span><i data-lucide="map-pin" style="width: 12px"></i> ${task.room}</span>
                 <span><i data-lucide="clock" style="width: 12px"></i> ${task.time}h</span>
                 <span><i data-lucide="dollar-sign" style="width: 12px"></i> ${formatCurrency(task.price)}</span>

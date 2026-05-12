@@ -5,10 +5,14 @@
 export const STORAGE_KEY = 'hannibal_house_tasks';
 export const LISTS_KEY = 'hannibal_house_lists';
 export const THEME_KEY = 'hannibal_house_theme';
+export const USERS_KEY = 'hannibal_house_users';
+export const ACTIVE_USER_KEY = 'hannibal_house_active_user';
 
 export const store = {
     tasks: [],
     lists: [],
+    users: [],
+    activeUserId: null,
     theme: 'dark',
 
     init() {
@@ -24,12 +28,44 @@ export const store = {
             try { this.lists = JSON.parse(savedLists); } catch (e) { this.lists = []; }
         }
 
+        // Load Users
+        const savedUsers = localStorage.getItem(USERS_KEY);
+        if (savedUsers) {
+            try { this.users = JSON.parse(savedUsers); } catch (e) { this.users = []; }
+        }
+        if (this.users.length === 0) {
+            // Default user
+            this.addUser('Owner');
+        }
+
+        // Load Active User
+        const savedActiveUser = localStorage.getItem(ACTIVE_USER_KEY);
+        this.activeUserId = savedActiveUser || this.users[0]?.id;
+
         // Load Theme
         const savedTheme = localStorage.getItem(THEME_KEY);
         this.theme = savedTheme || 'dark';
         document.documentElement.setAttribute('data-theme', this.theme);
 
-        return { tasks: this.tasks, lists: this.lists, theme: this.theme };
+        return { tasks: this.tasks, lists: this.lists, users: this.users, activeUserId: this.activeUserId };
+    },
+
+    addUser(name) {
+        const newUser = { id: crypto.randomUUID(), name: name };
+        this.users.push(newUser);
+        this.saveUsers();
+        if (!this.activeUserId) this.setActiveUser(newUser.id);
+        return newUser;
+    },
+
+    setActiveUser(id) {
+        this.activeUserId = id;
+        localStorage.setItem(ACTIVE_USER_KEY, id);
+        window.dispatchEvent(new CustomEvent('userChanged'));
+    },
+
+    saveUsers() {
+        localStorage.setItem(USERS_KEY, JSON.stringify(this.users));
     },
 
     toggleTheme() {
@@ -72,7 +108,8 @@ export const store = {
             list.items.push({
                 id: crypto.randomUUID(),
                 name: itemName,
-                completed: false
+                completed: false,
+                userId: this.activeUserId
             });
             this.saveLists();
         }
@@ -103,6 +140,7 @@ export const store = {
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             completed: false,
+            userId: this.activeUserId,
             ...task
         };
         this.tasks.push(newTask);
@@ -148,6 +186,7 @@ export const store = {
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             completed: false,
+            userId: this.activeUserId,
             title: t.title || 'Untitled Task',
             room: t.room || 'General',
             category: (t.category || 'other').toLowerCase(),

@@ -77,6 +77,13 @@
                 </div>
                 
                 <div class="top-bar-actions">
+                    <div class="user-selector-container">
+                        <i data-lucide="user"></i>
+                        <select id="user-selector">
+                            <!-- Users will be injected here -->
+                        </select>
+                        <button id="add-user-btn" class="icon-btn" title="Add User"><i data-lucide="plus-circle"></i></button>
+                    </div>
                     <button id="add-task-btn" class="primary-btn">
                         <i data-lucide="plus"></i>
                         <span>New Task</span>
@@ -133,6 +140,8 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
             <section class="content-view hidden" id="lists-view">
                 <div class="view-header">
                     <h1>Shopping Lists</h1>
