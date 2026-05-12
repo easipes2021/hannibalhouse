@@ -6,7 +6,7 @@ const SUPABASE_URL = 'https://dewyghwhnkjtbxncraju.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRld3lnaHdobmtqdGJ4bmNyYWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1OTA5MTEsImV4cCI6MjA5NDE2NjkxMX0.0wdZocow_DS0O0sTpjXDY2lQQVcuXSAlEBu3cNSzLRo';
 
 // @ts-ignore - Supabase is loaded from CDN in index.html
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase;
 
 export const THEME_KEY = 'hannibal_house_theme';
 export const ACTIVE_USER_KEY = 'hannibal_house_active_user';
@@ -19,6 +19,13 @@ export const store = {
     theme: 'dark',
 
     async init() {
+        // Initialize Supabase client
+        if (!window.supabase) {
+            console.error('Supabase library not loaded!');
+            return;
+        }
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // 1. Fetch initial data from Supabase
         await this.fetchAll();
 
@@ -31,7 +38,12 @@ export const store = {
         document.documentElement.setAttribute('data-theme', this.theme);
 
         const savedActiveUser = localStorage.getItem(ACTIVE_USER_KEY);
-        this.activeUserId = savedActiveUser || (this.users.length > 0 ? this.users[0].id : null);
+        if (!this.activeUserId && this.users.length === 0) {
+            const newUser = await this.addUser('Owner');
+            this.activeUserId = newUser.id;
+        } else {
+            this.activeUserId = savedActiveUser || (this.users.length > 0 ? this.users[0].id : null);
+        }
 
         return { tasks: this.tasks, lists: this.lists, users: this.users, activeUserId: this.activeUserId };
     },
