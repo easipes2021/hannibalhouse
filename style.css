@@ -365,6 +365,27 @@ body {
 .priority-medium { background: rgba(59, 130, 246, 0.1); color: var(--accent-primary); }
 .priority-low { background: rgba(16, 185, 129, 0.1); color: var(--status-low); }
 
+.task-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.delete-btn:hover {
+    color: var(--status-high);
+    background: rgba(244, 63, 94, 0.1);
+}
+
 /* Modals */
 .modal {
     display: none;
