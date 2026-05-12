@@ -144,22 +144,21 @@ export const store = {
     },
 
     bulkAdd(newTasks) {
-        // Simple mapping for CSV import
         const mappedTasks = newTasks.map(t => ({
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
             completed: false,
-            title: t.title || t.Title || 'Untitled Task',
-            room: t.room || t.Room || t.Location || 'General',
-            category: (t.category || t.Category || 'other').toLowerCase(),
-            priority: (t.priority || t.Priority || 'medium').toLowerCase(),
-            price: parseFloat(t.price || t.Price || 0),
-            difficulty: parseInt(t.difficulty || t.Difficulty || 1),
-            time: parseFloat(t.time || t.Time || 1),
+            title: t.title || 'Untitled Task',
+            room: t.room || 'General',
+            category: (t.category || 'other').toLowerCase(),
+            priority: (t.priority || 'medium').toLowerCase(),
+            price: parseFloat(t.price || 0),
+            difficulty: parseInt(t.difficulty || 1),
+            time: parseFloat(t.time || 1),
             repeat: !!t.repeat
         }));
         
         this.tasks = [...this.tasks, ...mappedTasks];
-        this.save();
+        this.saveTasks();
     }
 };

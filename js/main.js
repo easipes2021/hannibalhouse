@@ -208,6 +208,8 @@ const setupEventListeners = () => {
         if (file) {
             Papa.parse(file, {
                 header: true,
+                skipEmptyLines: 'greedy',
+                dynamicTyping: true,
                 complete: (results) => {
                     handleCsvImport(results);
                 }
@@ -269,7 +271,18 @@ const setupEventListeners = () => {
 };
 
 const handleCsvImport = (results) => {
-    const headers = results.meta.fields;
+    let headers = results.meta.fields || [];
+    
+    // Fallback: If PapaParse didn't find headers in meta, try to get them from the first row keys
+    if (headers.length === 0 && results.data.length > 0) {
+        headers = Object.keys(results.data[0]);
+    }
+
+    if (headers.length === 0) {
+        alert("Could not find any columns in the CSV. Please make sure the file has a header row.");
+        return;
+    }
+
     pendingCsvData = results.data;
     
     // Populate mapping modal
