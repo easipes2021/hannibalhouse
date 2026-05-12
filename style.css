@@ -749,8 +749,93 @@ select {
         grid-template-columns: 1fr;
     }
 
-    #expand-sidebar {
-        display: none !important; /* Hide expand button on mobile as it uses bottom nav */
+/* Settings View */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.settings-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: var(--transition);
+}
+
+.settings-header-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: var(--accent-primary);
+}
+
+.settings-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-tag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background-color: var(--bg-sidebar);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+/* Minimal List Buttons */
+.list-details .top-bar-actions .secondary-btn {
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.list-details .top-bar-actions .secondary-btn:hover {
+    color: var(--accent-primary);
+    background: var(--bg-sidebar);
+}
+
+/* Mobile Enhancements */
+@media (max-width: 768px) {
+    :root {
+        --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    .app-container {
+        padding-bottom: calc(70px + var(--safe-area-bottom));
+    }
+
+    .bottom-nav {
+        padding-bottom: var(--safe-area-bottom);
+        height: calc(70px + var(--safe-area-bottom));
+    }
+
+    .main-content {
+        padding: 20px 16px;
+        margin-top: env(safe-area-inset-top, 0);
+    }
+
+    .top-bar {
+        padding: 12px 16px;
+        margin: -20px -16px 24px -16px;
+        width: calc(100% + 32px);
+    }
+
+    /* Better touch feedback */
+    button:active {
+        transform: scale(0.96);
+        opacity: 0.8;
+    }
+
+    .nav-item {
+        padding: 12px;
     }
 }
 

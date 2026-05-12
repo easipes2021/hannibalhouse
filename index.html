@@ -52,16 +52,16 @@
                     <i data-lucide="shopping-cart"></i>
                     <span>Shopping Lists</span>
                 </button>
+                <button class="nav-item" data-view="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </button>
             </nav>
             
             <div class="sidebar-footer">
                 <button id="toggle-sidebar" class="secondary-btn" style="margin-bottom: 12px;" title="Collapse Menu">
                     <i data-lucide="chevron-left"></i>
                     <span>Collapse Menu</span>
-                </button>
-                <button id="theme-toggle" class="secondary-btn" style="margin-bottom: 12px;">
-                    <i data-lucide="sun"></i>
-                    <span>Toggle Theme</span>
                 </button>
                 <button id="import-btn" class="secondary-btn">
                     <i data-lucide="upload"></i>
@@ -181,6 +181,40 @@
                         <div id="list-items" class="task-list">
                             <!-- Items will be injected here -->
                         </div>
+                    </div>
+                </div>
+            <section class="content-view hidden" id="settings-view">
+                <div class="view-header">
+                    <h1>Settings</h1>
+                    <p class="subtitle">Manage your profile, theme, and household users.</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <div class="settings-header-group">
+                            <i data-lucide="palette"></i>
+                            <h3>Appearance</h3>
+                        </div>
+                        <p class="subtitle">Toggle between light and dark mode.</p>
+                        <button id="settings-theme-toggle" class="primary-btn" style="width: 100%; margin-top: 16px;">
+                            <i data-lucide="moon"></i>
+                            <span>Switch Theme</span>
+                        </button>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-header-group">
+                            <i data-lucide="users"></i>
+                            <h3>House Users</h3>
+                        </div>
+                        <p class="subtitle">Manage who can access the dashboard.</p>
+                        <div id="settings-user-list" class="settings-user-list" style="margin-top: 16px;">
+                            <!-- Users will be injected here -->
+                        </div>
+                        <button id="settings-add-user-btn" class="secondary-btn" style="width: 100%; margin-top: 16px;">
+                            <i data-lucide="plus-circle"></i>
+                            <span>Add New User</span>
+                        </button>
                     </div>
                 </div>
             </section>

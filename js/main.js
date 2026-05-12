@@ -15,7 +15,6 @@ const sortSelect = document.getElementById('sort-select');
 const searchInput = document.getElementById('task-search');
 const importBtn = document.getElementById('import-btn');
 const csvInput = document.getElementById('csv-input');
-const themeToggle = document.getElementById('theme-toggle');
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.content-view');
 
@@ -37,6 +36,11 @@ const activeListName = document.getElementById('active-list-name');
 // User Elements
 const userSelector = document.getElementById('user-selector');
 const addUserBtn = document.getElementById('add-user-btn');
+
+// Settings Elements
+const settingsUserList = document.getElementById('settings-user-list');
+const settingsAddUserBtn = document.getElementById('settings-add-user-btn');
+const settingsThemeToggle = document.getElementById('settings-theme-toggle');
 
 // App State
 let currentSort = 'priority';
@@ -61,6 +65,7 @@ const init = async () => {
 };
 
 const renderUsers = () => {
+    // Update main selector
     userSelector.innerHTML = '';
     store.users.forEach(user => {
         const option = document.createElement('option');
@@ -69,6 +74,20 @@ const renderUsers = () => {
         option.selected = user.id === store.activeUserId;
         userSelector.appendChild(option);
     });
+
+    // Update settings list
+    if (settingsUserList) {
+        settingsUserList.innerHTML = '';
+        store.users.forEach(user => {
+            const div = document.createElement('div');
+            div.className = 'user-tag';
+            div.innerHTML = `
+                <span>${user.name}</span>
+                ${user.id === store.activeUserId ? '<span style="font-size: 0.7rem; color: var(--accent-primary)">Active</span>' : ''}
+            `;
+            settingsUserList.appendChild(div);
+        });
+    }
 };
 
 const handleEditList = (id, currentName) => {
@@ -89,7 +108,6 @@ const handleEditList = (id, currentName) => {
         if (newName) {
             await store.updateList(id, newName);
             listModal.classList.remove('active');
-            // Reset form for next use
             modalTitle.textContent = 'Create New List';
             submitBtn.textContent = 'Create List';
         }
@@ -114,7 +132,6 @@ const handleEditItem = (listId, itemId, currentName) => {
         if (newName) {
             await store.updateListItem(listId, itemId, newName);
             itemModal.classList.remove('active');
-            // Reset form for next use
             modalTitle.textContent = 'Add Item to List';
             submitBtn.textContent = 'Add Item';
         }
@@ -132,14 +149,15 @@ const render = () => {
         view.classList.toggle('hidden', view.id !== `${activeView}-view`);
     });
 
-    // 3. Render Tasks (only if in task-related views)
+    // 3. Render Views
     if (activeView === 'dashboard' || activeView === 'tasks' || activeView === 'maintenance' || activeView === 'renovations' || activeView === 'cleaning') {
         renderTasksView();
     }
-
-    // 4. Render Lists (if in lists view)
     if (activeView === 'lists') {
         renderListsView();
+    }
+    if (activeView === 'settings') {
+        renderSettingsView();
     }
     
     // Update stats
@@ -155,7 +173,6 @@ const renderTasksView = () => {
     taskList.innerHTML = '';
     let tasks = store.tasks;
 
-    // Filter by view/category if needed
     if (activeView === 'maintenance') tasks = tasks.filter(t => t.category === 'maintenance');
     if (activeView === 'renovations') tasks = tasks.filter(t => t.category === 'renovation');
     if (activeView === 'cleaning') tasks = tasks.filter(t => t.category === 'cleaning');
@@ -239,8 +256,14 @@ const renderListsView = () => {
     }
 };
 
+const renderSettingsView = () => {
+    const btnIcon = store.theme === 'dark' ? 'sun' : 'moon';
+    const btnText = store.theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    settingsThemeToggle.innerHTML = `<i data-lucide="${btnIcon}"></i> <span>${btnText}</span>`;
+    if (window.lucide) lucide.createIcons();
+};
+
 const setupEventListeners = () => {
-    // Sidebar / Header Events
     logoReload.onclick = () => window.location.reload();
     
     toggleSidebarBtn.onclick = () => {
@@ -263,10 +286,13 @@ const setupEventListeners = () => {
         store.setActiveUser(e.target.value);
     });
 
-    addUserBtn.addEventListener('click', () => {
+    const openAddUser = () => {
         userModal.classList.add('active');
         userForm.reset();
-    });
+    };
+
+    addUserBtn.addEventListener('click', openAddUser);
+    settingsAddUserBtn.addEventListener('click', openAddUser);
 
     userForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -281,8 +307,9 @@ const setupEventListeners = () => {
     };
 
     // Theme Toggle
-    themeToggle.addEventListener('click', () => {
+    settingsThemeToggle.addEventListener('click', () => {
         store.toggleTheme();
+        renderSettingsView();
     });
 
     // Navigation / View Switching
@@ -290,6 +317,8 @@ const setupEventListeners = () => {
         item.addEventListener('click', () => {
             activeView = item.dataset.view;
             render();
+            // Scroll to top on view change (good for mobile)
+            window.scrollTo(0, 0);
         });
     });
 
@@ -318,26 +347,22 @@ const setupEventListeners = () => {
         taskModal.classList.remove('active');
     });
 
-    // Repeat options toggle
     const taskRepeat = document.getElementById('task-repeat');
     const repeatOptions = document.getElementById('repeat-options');
     taskRepeat.addEventListener('change', () => {
         repeatOptions.classList.toggle('hidden', !taskRepeat.checked);
     });
     
-    // Sorting
     sortSelect.addEventListener('change', (e) => {
         currentSort = e.target.value;
         render();
     });
     
-    // Searching
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value;
         render();
     });
     
-    // CSV Import
     importBtn.addEventListener('click', () => {
         csvInput.click();
     });
@@ -417,7 +442,6 @@ const setupEventListeners = () => {
         }
     };
 
-    // Close Modals
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             taskModal.classList.remove('active');
@@ -428,7 +452,6 @@ const setupEventListeners = () => {
         });
     });
 
-    // Mapping Form submission
     mappingForm.onsubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(mappingForm);
@@ -448,7 +471,6 @@ const setupEventListeners = () => {
         alert(`Successfully imported ${mappedTasks.length} tasks!`);
     };
 
-    // Listen for data updates
     window.addEventListener('tasksUpdated', render);
     window.addEventListener('listsUpdated', render);
     window.addEventListener('userChanged', () => {
@@ -492,5 +514,4 @@ const handleCsvImport = (results) => {
     mappingModal.classList.add('active');
 };
 
-// Start the app
 init();
