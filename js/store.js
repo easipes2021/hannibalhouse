@@ -15,26 +15,49 @@ export const store = {
     activeUserId: null,
     theme: 'dark',
 
-    init() {
-        // Load Tasks
+    async init() {
+        // 1. Fetch data from Repo (Publicly available if on GitHub Pages)
+        try {
+            const [tasksRes, listsRes, usersRes] = await Promise.all([
+                fetch('data/tasks.json').then(r => r.json()),
+                fetch('data/lists.json').then(r => r.json()),
+                fetch('data/users.json').then(r => r.json())
+            ]);
+            
+            this.tasks = tasksRes || [];
+            this.lists = listsRes || [];
+            this.users = usersRes || [];
+        } catch (e) {
+            console.warn('Could not load repo data, falling back to localStorage', e);
+        }
+
+        // 2. Merge/Overwrite with LocalStorage (for local unsynced changes)
         const savedTasks = localStorage.getItem(STORAGE_KEY);
         if (savedTasks) {
-            try { this.tasks = JSON.parse(savedTasks); } catch (e) { this.tasks = []; }
+            const localTasks = JSON.parse(savedTasks);
+            // Simple merge: add local tasks that aren't in repo
+            localTasks.forEach(lt => {
+                if (!this.tasks.find(rt => rt.id === lt.id)) this.tasks.push(lt);
+            });
         }
 
-        // Load Lists
         const savedLists = localStorage.getItem(LISTS_KEY);
         if (savedLists) {
-            try { this.lists = JSON.parse(savedLists); } catch (e) { this.lists = []; }
+            const localLists = JSON.parse(savedLists);
+            localLists.forEach(ll => {
+                if (!this.lists.find(rl => rl.id === ll.id)) this.lists.push(ll);
+            });
         }
 
-        // Load Users
         const savedUsers = localStorage.getItem(USERS_KEY);
         if (savedUsers) {
-            try { this.users = JSON.parse(savedUsers); } catch (e) { this.users = []; }
+            const localUsers = JSON.parse(savedUsers);
+            localUsers.forEach(lu => {
+                if (!this.users.find(ru => ru.id === lu.id)) this.users.push(lu);
+            });
         }
+
         if (this.users.length === 0) {
-            // Default user
             this.addUser('Owner');
         }
 
@@ -110,9 +133,29 @@ export const store = {
                 id: crypto.randomUUID(),
                 name: itemName,
                 completed: false,
-                userId: this.activeUserId
+                userId: this.activeUserId,
+                createdAt: new Date().toISOString()
             });
             this.saveLists();
+        }
+    },
+
+    updateList(id, name) {
+        const list = this.lists.find(l => l.id === id);
+        if (list) {
+            list.name = name;
+            this.saveLists();
+        }
+    },
+
+    updateListItem(listId, itemId, name) {
+        const list = this.lists.find(l => l.id === listId);
+        if (list) {
+            const item = list.items.find(i => i.id === itemId);
+            if (item) {
+                item.name = name;
+                this.saveLists();
+            }
         }
     },
 

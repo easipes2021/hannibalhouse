@@ -69,6 +69,18 @@ body {
     display: flex;
     height: 100vh;
     width: 100vw;
+    transition: var(--transition);
+}
+
+.app-container.sidebar-collapsed .sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border-right: none;
+}
+
+.app-container.sidebar-collapsed .main-content {
+    margin-left: 0;
 }
 
 /* Sidebar */
@@ -80,6 +92,9 @@ body {
     flex-direction: column;
     padding: 24px;
     z-index: 10;
+    transition: var(--transition);
+    overflow-x: hidden;
+    white-space: nowrap;
 }
 
 .logo {
@@ -90,6 +105,13 @@ body {
     font-weight: 700;
     margin-bottom: 40px;
     color: var(--accent-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.logo:hover {
+    transform: scale(1.02);
+    opacity: 0.8;
 }
 
 .nav-menu {
@@ -591,6 +613,15 @@ input:focus, select:focus {
     display: none;
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
 /* Custom Select */
 select {
     appearance: none;
@@ -717,5 +748,23 @@ select {
     .form-row {
         grid-template-columns: 1fr;
     }
+
+    #expand-sidebar {
+        display: none !important; /* Hide expand button on mobile as it uses bottom nav */
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+.sidebar-collapsed .sidebar {
+    width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+#expand-sidebar:not(.hidden) {
+    display: flex;
 }
 

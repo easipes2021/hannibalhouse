@@ -1,6 +1,7 @@
 import { store } from './store.js';
 import { renderTask, updateStats } from './components.js';
 import { sortTasks, filterTasks, formatDate } from './utils.js';
+import { githubSync } from './github.js';
 
 // DOM Elements
 const taskList = document.getElementById('priority-task-list');
@@ -19,11 +20,19 @@ const themeToggle = document.getElementById('theme-toggle');
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.content-view');
 
+// Sidebar Elements
+const sidebar = document.getElementById('sidebar');
+const appContainer = document.getElementById('app-container');
+const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+const expandSidebarBtn = document.getElementById('expand-sidebar');
+const logoReload = document.getElementById('logo-reload');
+
 // Lists Elements
 const listsNav = document.getElementById('lists-nav');
 const listItemsContainer = document.getElementById('list-items');
 const addListBtn = document.getElementById('add-list-btn');
 const addListItemBtn = document.getElementById('add-list-item-btn');
+const editListBtn = document.getElementById('edit-list-btn');
 const deleteListBtn = document.getElementById('delete-list-btn');
 const activeListName = document.getElementById('active-list-name');
 
@@ -38,9 +47,17 @@ let activeView = 'dashboard';
 let activeListId = null;
 let pendingCsvData = null;
 
-const init = () => {
-    store.init();
+const init = async () => {
+    await store.init();
     renderUsers();
+    
+    // Load sidebar state
+    const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+    if (isCollapsed) {
+        appContainer.classList.add('sidebar-collapsed');
+        expandSidebarBtn.classList.remove('hidden');
+    }
+
     render();
     setupEventListeners();
 };
@@ -56,8 +73,59 @@ const renderUsers = () => {
     });
 };
 
+const handleEditList = (id, currentName) => {
+    const listModal = document.getElementById('list-modal');
+    const listForm = document.getElementById('list-form');
+    const modalTitle = document.getElementById('list-modal-title');
+    const submitBtn = document.getElementById('list-submit-btn');
+    const nameInput = document.getElementById('list-name');
+
+    modalTitle.textContent = 'Edit List';
+    submitBtn.textContent = 'Update List';
+    nameInput.value = currentName;
+    listModal.classList.add('active');
+
+    listForm.onsubmit = (e) => {
+        e.preventDefault();
+        const newName = nameInput.value;
+        if (newName) {
+            store.updateList(id, newName);
+            listModal.classList.remove('active');
+            render();
+            // Reset form for next use
+            modalTitle.textContent = 'Create New List';
+            submitBtn.textContent = 'Create List';
+        }
+    };
+};
+
+const handleEditItem = (listId, itemId, currentName) => {
+    const itemModal = document.getElementById('list-item-modal');
+    const itemForm = document.getElementById('list-item-form');
+    const modalTitle = document.getElementById('list-item-modal-title');
+    const submitBtn = document.getElementById('list-item-submit-btn');
+    const nameInput = document.getElementById('item-name');
+
+    modalTitle.textContent = 'Edit Item';
+    submitBtn.textContent = 'Update Item';
+    nameInput.value = currentName;
+    itemModal.classList.add('active');
+
+    itemForm.onsubmit = (e) => {
+        e.preventDefault();
+        const newName = nameInput.value;
+        if (newName) {
+            store.updateListItem(listId, itemId, newName);
+            itemModal.classList.remove('active');
+            render();
+            // Reset form for next use
+            modalTitle.textContent = 'Add Item to List';
+            submitBtn.textContent = 'Add Item';
+        }
+    };
+};
+
 const render = () => {
-    // ... rest of render logic ...
     // 1. Handle Navigation Highlighting
     navItems.forEach(item => {
         item.classList.toggle('active', item.dataset.view === activeView);
@@ -119,16 +187,19 @@ const renderListsView = () => {
     });
 
     const activeList = store.lists.find(l => l.id === activeListId);
+
     if (activeList) {
         activeListName.innerHTML = `
             ${activeList.name}
-            <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px;">
-                Created: ${formatDate(activeList.createdAt)}
+            <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px;">
+                Created ${formatDate(activeList.createdAt)}
             </span>
         `;
         addListItemBtn.classList.remove('hidden');
+        editListBtn.classList.remove('hidden');
         deleteListBtn.classList.remove('hidden');
         listItemsContainer.innerHTML = '';
+        
         activeList.items.forEach(item => {
             const itemEl = document.createElement('div');
             itemEl.className = `task-item ${item.completed ? 'completed' : ''}`;
@@ -138,23 +209,59 @@ const renderListsView = () => {
                 </div>
                 <div style="flex: 1">
                     <span class="task-item-title">${item.name}</span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Added by: ${store.users.find(u => u.id === item.userId)?.name || 'Unknown'}</span>
+                    <div style="display: flex; gap: 8px; align-items: center; font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>By: ${store.users.find(u => u.id === item.userId)?.name || 'Unknown'}</span>
+                        <span>•</span>
+                        <span>${formatDate(item.createdAt)}</span>
+                    </div>
                 </div>
-                <button class="delete-btn"><i data-lucide="trash-2" style="width: 14px"></i></button>
+                <div class="task-actions">
+                    <button class="edit-item-btn icon-btn" title="Edit Item"><i data-lucide="edit-2" style="width: 12px"></i></button>
+                    <button class="delete-btn icon-btn"><i data-lucide="trash-2" style="width: 14px"></i></button>
+                </div>
             `;
-            itemEl.querySelector('.task-checkbox').onclick = () => store.toggleListItem(activeList.id, item.id);
-            itemEl.querySelector('.delete-btn').onclick = () => store.deleteListItem(activeList.id, item.id);
+            itemEl.querySelector('.task-checkbox').onclick = (e) => {
+                e.stopPropagation();
+                store.toggleListItem(activeList.id, item.id);
+            };
+            itemEl.querySelector('.delete-btn').onclick = (e) => {
+                e.stopPropagation();
+                if (confirm('Delete this item?')) {
+                    store.deleteListItem(activeList.id, item.id);
+                    render();
+                }
+            };
+            itemEl.querySelector('.edit-item-btn').onclick = (e) => {
+                e.stopPropagation();
+                handleEditItem(activeList.id, item.id, item.name);
+            };
             listItemsContainer.appendChild(itemEl);
         });
     } else {
         activeListName.textContent = 'Select a list';
         addListItemBtn.classList.add('hidden');
+        editListBtn.classList.add('hidden');
         deleteListBtn.classList.add('hidden');
         listItemsContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 40px;">Choose a list from the sidebar or create a new one.</p>';
     }
 };
 
 const setupEventListeners = () => {
+    // Sidebar / Header Events
+    logoReload.onclick = () => window.location.reload();
+    
+    toggleSidebarBtn.onclick = () => {
+        appContainer.classList.add('sidebar-collapsed');
+        expandSidebarBtn.classList.remove('hidden');
+        localStorage.setItem('sidebar_collapsed', 'true');
+    };
+
+    expandSidebarBtn.onclick = () => {
+        appContainer.classList.remove('sidebar-collapsed');
+        expandSidebarBtn.classList.add('hidden');
+        localStorage.setItem('sidebar_collapsed', 'false');
+    };
+
     // User Selection
     const userModal = document.getElementById('user-modal');
     const userForm = document.getElementById('user-form');
@@ -196,13 +303,6 @@ const setupEventListeners = () => {
     addTaskBtn.addEventListener('click', () => {
         taskModal.classList.add('active');
         taskForm.reset();
-    });
-    
-    closeModalBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            taskModal.classList.remove('active');
-            mappingModal.classList.remove('active');
-        });
     });
     
     // Form submission
@@ -270,11 +370,14 @@ const setupEventListeners = () => {
     const listItemForm = document.getElementById('list-item-form');
 
     addListBtn.onclick = () => {
+        document.getElementById('list-modal-title').textContent = 'Create New List';
+        document.getElementById('list-submit-btn').textContent = 'Create List';
         listModal.classList.add('active');
         listForm.reset();
+        listForm.onsubmit = handleAddListSubmit;
     };
 
-    listForm.onsubmit = (e) => {
+    const handleAddListSubmit = (e) => {
         e.preventDefault();
         const name = document.getElementById('list-name').value;
         if (name) {
@@ -287,12 +390,22 @@ const setupEventListeners = () => {
         }
     };
 
-    addListItemBtn.onclick = () => {
-        listItemModal.classList.add('active');
-        listItemForm.reset();
+    listForm.onsubmit = handleAddListSubmit;
+
+    editListBtn.onclick = () => {
+        const activeList = store.lists.find(l => l.id === activeListId);
+        if (activeList) handleEditList(activeList.id, activeList.name);
     };
 
-    listItemForm.onsubmit = (e) => {
+    addListItemBtn.onclick = () => {
+        document.getElementById('list-item-modal-title').textContent = 'Add Item to List';
+        document.getElementById('list-item-submit-btn').textContent = 'Add Item';
+        listItemModal.classList.add('active');
+        listItemForm.reset();
+        listItemForm.onsubmit = handleAddItemSubmit;
+    };
+
+    const handleAddItemSubmit = (e) => {
         e.preventDefault();
         const name = document.getElementById('item-name').value;
         if (name && activeListId) {
@@ -302,11 +415,64 @@ const setupEventListeners = () => {
         }
     };
 
+    listItemForm.onsubmit = handleAddItemSubmit;
+
     deleteListBtn.onclick = () => {
         if (confirm('Delete this list?')) {
             store.deleteList(activeListId);
             activeListId = null;
             render();
+        }
+    };
+
+    // GitHub Sync Events
+    const syncRepoBtn = document.getElementById('sync-repo-btn');
+    const syncModal = document.getElementById('sync-modal');
+    const syncForm = document.getElementById('sync-form');
+    const syncSubmitBtn = document.getElementById('sync-submit-btn');
+
+    // Load saved GitHub settings
+    const savedRepo = localStorage.getItem('gh_repo');
+    const savedBranch = localStorage.getItem('gh_branch');
+    const savedToken = localStorage.getItem('gh_token');
+    if (savedRepo) document.getElementById('gh-repo').value = savedRepo;
+    if (savedBranch) document.getElementById('gh-branch').value = savedBranch;
+    if (savedToken) document.getElementById('gh-token').value = savedToken;
+
+    syncRepoBtn.onclick = () => {
+        syncModal.classList.add('active');
+    };
+
+    syncForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const token = document.getElementById('gh-token').value;
+        const repo = document.getElementById('gh-repo').value;
+        const branch = document.getElementById('gh-branch').value;
+
+        // Save settings
+        localStorage.setItem('gh_repo', repo);
+        localStorage.setItem('gh_branch', branch);
+        localStorage.setItem('gh_token', token);
+
+        syncSubmitBtn.disabled = true;
+        syncSubmitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Syncing...';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            await githubSync.syncAll(token, repo, branch, {
+                tasks: store.tasks,
+                lists: store.lists,
+                users: store.users
+            });
+            alert('Successfully synced data to GitHub repository!');
+            syncModal.classList.remove('active');
+        } catch (err) {
+            console.error(err);
+            alert(`Sync failed: ${err.message}`);
+        } finally {
+            syncSubmitBtn.disabled = false;
+            syncSubmitBtn.textContent = 'Push Data to Repo';
+            if (window.lucide) lucide.createIcons();
         }
     };
 
@@ -318,6 +484,7 @@ const setupEventListeners = () => {
             listModal.classList.remove('active');
             listItemModal.classList.remove('active');
             userModal.classList.remove('active');
+            syncModal.classList.remove('active');
         });
     });
 
@@ -345,24 +512,19 @@ const setupEventListeners = () => {
     // Listen for data updates
     window.addEventListener('tasksUpdated', render);
     window.addEventListener('listsUpdated', render);
+    window.addEventListener('userChanged', render);
 };
 
 const handleCsvImport = (results) => {
     let headers = results.meta.fields || [];
-    
-    // Fallback: If PapaParse didn't find headers in meta, try to get them from the first row keys
     if (headers.length === 0 && results.data.length > 0) {
         headers = Object.keys(results.data[0]);
     }
-
     if (headers.length === 0) {
-        alert("Could not find any columns in the CSV. Please make sure the file has a header row.");
+        alert("Could not find any columns in the CSV.");
         return;
     }
-
     pendingCsvData = results.data;
-    
-    // Populate mapping modal
     const fields = [
         { key: 'title', label: 'Title' },
         { key: 'room', label: 'Room/Location' },
@@ -372,7 +534,6 @@ const handleCsvImport = (results) => {
         { key: 'difficulty', label: 'Difficulty' },
         { key: 'time', label: 'Time' }
     ];
-
     mappingContainer.innerHTML = '';
     fields.forEach(field => {
         const row = document.createElement('div');
@@ -386,7 +547,6 @@ const handleCsvImport = (results) => {
         `;
         mappingContainer.appendChild(row);
     });
-
     mappingModal.classList.add('active');
 };
 
