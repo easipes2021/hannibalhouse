@@ -37,6 +37,10 @@
                     <i data-lucide="check-square"></i>
                     <span>All Tasks</span>
                 </button>
+                <button class="nav-item" data-view="cleaning">
+                    <i data-lucide="sparkles"></i>
+                    <span>Cleaning</span>
+                </button>
                 <button class="nav-item" data-view="maintenance">
                     <i data-lucide="wrench"></i>
                     <span>Maintenance</span>
@@ -45,9 +49,17 @@
                     <i data-lucide="hammer"></i>
                     <span>Renovations</span>
                 </button>
+                <button class="nav-item" data-view="lists">
+                    <i data-lucide="shopping-cart"></i>
+                    <span>Shopping Lists</span>
+                </button>
             </nav>
             
             <div class="sidebar-footer">
+                <button id="theme-toggle" class="secondary-btn" style="margin-bottom: 12px;">
+                    <i data-lucide="sun"></i>
+                    <span>Toggle Theme</span>
+                </button>
                 <button id="import-btn" class="secondary-btn">
                     <i data-lucide="upload"></i>
                     <span>Import CSV</span>
@@ -121,11 +133,61 @@
                         </div>
                     </div>
                 </div>
+            <section class="content-view hidden" id="lists-view">
+                <div class="view-header">
+                    <h1>Shopping Lists</h1>
+                    <p class="subtitle">Grocery and project shopping lists.</p>
+                </div>
+                
+                <div class="lists-container">
+                    <div class="lists-sidebar">
+                        <button id="add-list-btn" class="primary-btn" style="width: 100%; margin-bottom: 20px;">
+                            <i data-lucide="plus"></i> New List
+                        </button>
+                        <div id="lists-nav" class="nav-menu">
+                            <!-- Lists will be injected here -->
+                        </div>
+                    </div>
+                    <div class="list-details">
+                        <div id="active-list-header" class="section-header">
+                            <h2 id="active-list-name">Select a list</h2>
+                            <div class="top-bar-actions">
+                                <button id="add-list-item-btn" class="secondary-btn hidden">
+                                    <i data-lucide="plus"></i> Add Item
+                                </button>
+                                <button id="delete-list-btn" class="secondary-btn hidden" style="color: var(--status-high)">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="list-items" class="task-list">
+                            <!-- Items will be injected here -->
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <!-- Modals -->
+    <div id="mapping-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Map CSV Columns</h2>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <p style="margin-bottom: 20px; color: var(--text-secondary);">Select which CSV headers correspond to the task details below.</p>
+            <form id="mapping-form">
+                <div id="mapping-container" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Mapping selects will be injected here -->
+                </div>
+                <div class="form-actions" style="margin-top: 32px;">
+                    <button type="button" class="secondary-btn close-modal">Cancel</button>
+                    <button type="submit" class="primary-btn">Complete Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div id="task-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

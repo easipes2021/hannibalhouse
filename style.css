@@ -1,5 +1,5 @@
-:root {
-    /* Color Palette */
+:root[data-theme="dark"] {
+    /* Color Palette - Dark */
     --bg-main: #0a0a0c;
     --bg-sidebar: #121215;
     --bg-card: #1c1c21;
@@ -13,14 +13,36 @@
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
     
+    --border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="light"] {
+    /* Color Palette - Light */
+    --bg-main: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --bg-input: #f1f5f9;
+    
+    --accent-primary: #2563eb;
+    --accent-primary-glow: rgba(37, 99, 235, 0.15);
+    --accent-secondary: #7c3aed;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    
+    --border: rgba(0, 0, 0, 0.08);
+    --glass-bg: rgba(0, 0, 0, 0.02);
+    --glass-border: rgba(0, 0, 0, 0.04);
+}
+
+:root {
     --status-low: #10b981;
     --status-medium: #f59e0b;
     --status-high: #f43f5e;
     --status-urgent: #881337;
-    
-    --border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.05);
     
     /* Spacing & Radii */
     --radius-sm: 8px;
@@ -384,6 +406,56 @@ body {
 .delete-btn:hover {
     color: var(--status-high);
     background: rgba(244, 63, 94, 0.1);
+}
+
+/* Lists View Layout */
+.lists-container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 40px;
+    height: calc(100vh - 250px);
+}
+
+.lists-sidebar {
+    border-right: 1px solid var(--border);
+    padding-right: 20px;
+}
+
+.list-details {
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+#active-list-header {
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.list-item:hover {
+    background: var(--glass-bg);
+}
+
+.mapping-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.mapping-row label {
+    margin-bottom: 0;
+    flex: 1;
 }
 
 /* Modals */
